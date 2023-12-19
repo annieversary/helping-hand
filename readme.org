@@ -1,0 +1,58 @@
+* helping-hand
+helping-hand is based on the go library [[https://github.com/kele/hand][kele/hand]], which appeared on page 36 of [[https://pagedout.institute/download/PagedOut_003_beta1.pdf][issue #3 of Paged Out!]]
+
+from the original repo:
+
+#+begin_quote
+Imagine you process lots of data. From time to time, though, the data entries are a bit tricky to handle. Writing code that handles them would require a lot of effort... but you could easily handle these individual cases yourself, because you are a human.
+#+end_quote
+
+using it is very simple:
+
+#+begin_src rust
+// given
+fn parse_num(s: &str) -> Result<u8, ParseIntError> {
+    s.parse()
+}
+
+// change from:
+let result = parse_num("1").unwrap();
+
+// to:
+let result = help_with(parse_num)("1").unwrap();
+#+end_src
+
+if the function passed to =help_with= returns an error, =help_with= will very nicely ask you to manually provide the corresponding value
+
+for example, running [[examples/parsing_numbers.rs]] will print the following, and then stop, waiting for input:
+
+#+begin_src
+1
+2
+Error with input "three": ParseIntError { kind: InvalidDigit }
+Fix:
+#+end_src
+
+you can then type the correct value using json, followed by =EndOfFile= (usually =Ctrl+D=).
+this value will get parsed using the type's =serde::Deserialize= implementation.
+
+if in this example we type =3= followed by =Ctrl+D=, the program continues running, and the complete output ends up being:
+
+#+begin_src
+1
+2
+Error with input "three": ParseIntError { kind: InvalidDigit }
+Fix: 3
+3
+4
+#+end_src
+
+since you can type json, the function passed to =help_with= can return any type that implements =Deserialize=, like in [[examples/complex_type.rs]], the output of which is (user input has been surrounded by =<>=):
+
+#+begin_src
+hello
+worldworld
+Error with input "this has a semicolon instead!; 4": "incorrect number of commas"
+Fix: <{"string": "this has a semicolon instead!", "times": 4}>
+this has a semicolon instead!this has a semicolon instead!this has a semicolon instead!this has a semicolon instead!
+#+end_src
