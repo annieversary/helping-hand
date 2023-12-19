@@ -32,13 +32,25 @@ where
     move |i: I| match f(i.clone()) {
         Ok(o) => Ok(o),
         Err(err) => {
-            writeln!(write, "Error with input {i:?}: {err:?}").expect("Failed to write");
-            write!(write, "Fix: ").expect("Failed to write");
-            write.flush().expect("Failed to flush");
+            let mut err = format!("{err:?}");
+            let mut i = format!("{i:?}");
 
-            // TODO if this errors we should say something
-            // maybe let the user retry, or just consider it an error
-            let o: O = serde_json::from_reader(&mut read).unwrap();
+            let o: O = loop {
+                writeln!(write, "Error with input {i}: {err}").expect("Failed to write");
+                write!(write, "Fix: ").expect("Failed to write");
+                write.flush().expect("Failed to flush");
+
+                let mut string = String::new();
+                read.read_to_string(&mut string).expect("Failed to read");
+
+                match serde_json::from_str(&string) {
+                    Ok(o) => break o,
+                    Err(e) => {
+                        err = format!("{e:?}");
+                        i = string;
+                    }
+                }
+            };
 
             Ok(o)
         }
